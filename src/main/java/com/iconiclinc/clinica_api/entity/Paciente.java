@@ -1,5 +1,6 @@
 package com.iconiclinc.clinica_api.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -22,10 +23,12 @@ public class Paciente {
 
     @OneToOne
     @JoinColumn(name = "id_usuario", nullable = true, unique = true)
+    @JsonIgnoreProperties({"rol"})
     private Usuario usuario;
 
     @ManyToOne
     @JoinColumn(name = "id_profesional", nullable = false)
+    @JsonIgnoreProperties({"usuario", "pacientes"})
     private Profesional profesional;
 
     public Paciente() {
