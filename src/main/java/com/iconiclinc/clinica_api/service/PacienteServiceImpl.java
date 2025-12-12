@@ -1,7 +1,10 @@
 package com.iconiclinc.clinica_api.service;
 
+import com.iconiclinc.clinica_api.dto.response.PacienteResponseDTO;
 import com.iconiclinc.clinica_api.entity.Paciente;
 import com.iconiclinc.clinica_api.entity.Rutina;
+import com.iconiclinc.clinica_api.exception.PatientNotFoundException;
+import com.iconiclinc.clinica_api.mapper.PacienteMapper;
 import com.iconiclinc.clinica_api.repository.PacienteRepository;
 import com.iconiclinc.clinica_api.repository.RutinaRepository;
 import org.slf4j.Logger;
@@ -17,10 +20,12 @@ public class PacienteServiceImpl implements PacienteService {
     private static final Logger log = LoggerFactory.getLogger(ProfesionalServiceImpl.class);
     private final PacienteRepository pacienteRepository;
     private final RutinaRepository rutinaRepository;
+    private final PacienteMapper pacienteMapper;
 
-    public PacienteServiceImpl(PacienteRepository pacienteRepository, RutinaRepository rutinaRepository) {
+    public PacienteServiceImpl(PacienteRepository pacienteRepository, RutinaRepository rutinaRepository, PacienteMapper pacienteMapper) {
         this.pacienteRepository = pacienteRepository;
         this.rutinaRepository = rutinaRepository;
+        this.pacienteMapper = pacienteMapper;
     }
 
     @Override
@@ -36,13 +41,15 @@ public class PacienteServiceImpl implements PacienteService {
     }
 
     @Override
-    public Paciente getPacienteById(Integer id) {
+    public PacienteResponseDTO getPacienteById(Integer id) {
         log.info("Attempting to fetch patient with ID {}", id);
-        return pacienteRepository.findById(id)
+
+        Paciente paciente = pacienteRepository.findById(id)
                 .orElseThrow(()->{
                     log.error("Patient not found with ID {}", id);
-                    return new RuntimeException("Patient not found with ID" + id);
+                    return new PatientNotFoundException(id);
                 });
+        return pacienteMapper.toResponseDTO(paciente);
     }
 
 }
