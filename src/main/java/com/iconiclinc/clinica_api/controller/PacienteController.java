@@ -1,15 +1,15 @@
 package com.iconiclinc.clinica_api.controller;
 
+import com.iconiclinc.clinica_api.dto.request.PacienteRequestDTO;
+import com.iconiclinc.clinica_api.dto.response.PacienteResponseDTO;
 import com.iconiclinc.clinica_api.entity.Paciente;
 import com.iconiclinc.clinica_api.entity.Rutina;
 import com.iconiclinc.clinica_api.service.PacienteService;
+import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -24,9 +24,8 @@ public class PacienteController {
         this.pacienteService = pacienteService;
     }
     @GetMapping("/{id}")
-    public ResponseEntity<Paciente> getPacienteById(@PathVariable Integer id){
-        Paciente paciente = pacienteService.getPacienteById(id);
-        return ResponseEntity.ok(paciente);
+    public ResponseEntity<PacienteResponseDTO> getPacienteById(@PathVariable Integer id){
+        return ResponseEntity.ok(pacienteService.getPacienteById(id));
     }
 
 }
