@@ -1,11 +1,13 @@
 package com.iconiclinc.clinica_api.service;
 
+import com.iconiclinc.clinica_api.dto.request.PacienteRequestDTO;
+import com.iconiclinc.clinica_api.dto.response.PacienteResponseDTO;
 import com.iconiclinc.clinica_api.entity.Paciente;
 
 import java.util.List;
 
 public interface ProfesionalService {
-    Paciente addPatient(Paciente paciente, Integer id);
+    PacienteResponseDTO addPatient(Integer professionalId, PacienteRequestDTO requestDTO);
 
-    List<Paciente> getPatientsByProfessional(Integer id);
+    List<PacienteResponseDTO> getPatientsByProfessional(Integer professionalId);
 }

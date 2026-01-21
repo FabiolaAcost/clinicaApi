@@ -2,9 +2,7 @@ package com.iconiclinc.clinica_api.controller;
 
 
 import com.iconiclinc.clinica_api.dto.request.RecomendacionRequestDTO;
-import com.iconiclinc.clinica_api.dto.response.RecomendacionListResponseDTO;
 import com.iconiclinc.clinica_api.dto.response.RecomendacionResponseDTO;
-import com.iconiclinc.clinica_api.entity.Recomendacion;
 import com.iconiclinc.clinica_api.service.RecomendacionService;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
@@ -32,8 +30,20 @@ public class RecomendacionController {
     }
 
     @GetMapping("/pacientes/{pacienteId}")
-    public ResponseEntity<RecomendacionListResponseDTO> getRecommendationsByPatient(
+    public ResponseEntity<List<RecomendacionResponseDTO>> getRecommendationsByPatient(
             @PathVariable Integer pacienteId){
         return ResponseEntity.ok(recomendacionService.getRecommendationsByPatient(pacienteId)) ;
+    }
+    @PutMapping("/{recommendationId}")
+    public ResponseEntity<RecomendacionResponseDTO> updateRecommendation(
+            @PathVariable Integer recommendationId,
+            @Valid @RequestBody RecomendacionRequestDTO requestDTO
+    ){
+        return ResponseEntity.ok(recomendacionService.updateRecommendation(recommendationId, requestDTO));
+    }
+    @DeleteMapping("/{recommendationId}")
+    public ResponseEntity<Void> deleteRecommedantion(@PathVariable Integer recommendationId){
+        recomendacionService.deleteRecommendation(recommendationId);
+        return ResponseEntity.noContent().build();
     }
 }

@@ -8,14 +8,15 @@ import com.iconiclinc.clinica_api.entity.TipoTratamiento;
 import com.iconiclinc.clinica_api.entity.Tratamiento;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Component
 public class TratamientoMapper {
-    public Tratamiento toEntity(TratamientoRequestDTO tratamientoRequestDTO, Paciente paciente, Profesional profesional){
+    public Tratamiento toEntity(TipoTratamiento tipo, LocalDate fecha, Paciente paciente, Profesional profesional){
         Tratamiento tratamiento = new Tratamiento();
-        tratamiento.setTipo(TipoTratamiento.valueOf(tratamientoRequestDTO.getTipo()));
-        tratamiento.setFecha(tratamientoRequestDTO.getFecha());
+        tratamiento.setTipo(tipo);
+        tratamiento.setFecha(fecha);
         tratamiento.setPaciente(paciente);
         tratamiento.setProfesional(profesional);
         return tratamiento;

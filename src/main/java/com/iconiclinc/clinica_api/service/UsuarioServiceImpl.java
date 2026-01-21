@@ -1,9 +1,18 @@
 package com.iconiclinc.clinica_api.service;
 
+import com.iconiclinc.clinica_api.dto.request.LoginRequestDTO;
+import com.iconiclinc.clinica_api.dto.request.UsuarioRequestDTO;
+import com.iconiclinc.clinica_api.dto.response.UsuarioResponseDTO;
 import com.iconiclinc.clinica_api.entity.Paciente;
+import com.iconiclinc.clinica_api.entity.Rol;
 import com.iconiclinc.clinica_api.entity.Usuario;
+import com.iconiclinc.clinica_api.exception.BusinessException;
+import com.iconiclinc.clinica_api.exception.UserNotFoundException;
+import com.iconiclinc.clinica_api.mapper.UsuarioMapper;
 import com.iconiclinc.clinica_api.repository.PacienteRepository;
+import com.iconiclinc.clinica_api.repository.RolRepository;
 import com.iconiclinc.clinica_api.repository.UsuarioRepository;
+import org.hibernate.usertype.BaseUserTypeSupport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -20,117 +29,104 @@ public class UsuarioServiceImpl implements UsuarioService{
     private final PacienteRepository pacienteRepository;
     private final UsuarioRepository usuarioRepository;
     private final BCryptPasswordEncoder passwordEncoder;
-
+    private final UsuarioMapper usuarioMapper;
     private  final PacienteService pacienteService;
+    private final RolRepository rolRepository;
 
     public UsuarioServiceImpl(UsuarioRepository usuarioRepository,
                               BCryptPasswordEncoder passwordEncoder,
-                              PacienteRepository pacienteRepository,
-                              PacienteService pacienteService) {
+                              PacienteRepository pacienteRepository, UsuarioMapper usuarioMapper,
+                              PacienteService pacienteService, RolRepository rolRepository) {
         this.usuarioRepository = usuarioRepository;
         this.passwordEncoder = passwordEncoder;
         this.pacienteRepository = pacienteRepository;
+        this.usuarioMapper = usuarioMapper;
         this.pacienteService = pacienteService;
+        this.rolRepository = rolRepository;
     }
 
     @Override
-    public Optional<Usuario> findByEmail(String email) {
-        log.debug("Looking up user by email {} ", email);
-        return usuarioRepository.findByEmail(email);
-    }
+    public UsuarioResponseDTO login(LoginRequestDTO requestDTO) {
+        log.info("Attempting login for email {}", requestDTO.getEmail());
 
-    @Override
-    public Usuario login(String email, String password) {
-        log.info("Attempting login for email {}", email);
-
-        Usuario usuario = usuarioRepository.findByEmail(email)
+        Usuario usuario = usuarioRepository.findByEmail(requestDTO.getEmail())
                 .orElseThrow(() -> {
-                    log.error("User with email {} not found", email);
-                    return new RuntimeException("Invalid email or password");
+                    log.warn("User with email {} not found", requestDTO.getEmail());
+                    return new BusinessException("Invalid email or password");
                 });
 
 
-        if (!passwordEncoder.matches(password, usuario.getContrasena())){
-            log.error("Invalid password for email {} ", email);
-            throw new RuntimeException("Invalid email or password");
+        if (!passwordEncoder.matches(requestDTO.getContrasena(), usuario.getContrasena())){
+            log.warn("Invalid password for email {} ", requestDTO.getEmail());
+            throw new BusinessException("Invalid email or password");
         }
 
         log.info("Login successful for user {}", usuario.getEmail());
-        return usuario;
+        return usuarioMapper.toResponseDTO(usuario);
     }
 
-    @Override
-    public Boolean existsByEmail(String email) {
+    private Boolean existsByEmail(String email) {
         boolean exists = usuarioRepository.existsByEmail(email);
         log.debug("Email {} exists? {}", email, exists);
         return exists;
     }
 
-    @Override
-    public Boolean existByRut(String rut) {
+    private Boolean existsByRut(String rut) {
         boolean exists = usuarioRepository.existsByRut(rut);
         log.debug("RUT {}, exists? {}", rut, exists);
         return exists;
     }
 
     @Override
-    public Usuario save(Usuario usuario) {
-        log.info("Attempting tu register user with RUT: {}", usuario.getRut());
+    public UsuarioResponseDTO register(UsuarioRequestDTO requestDTO) {
+        log.info("Attempting to register user with RUT: {}", requestDTO.getRut());
 
-        if (existsByEmail(usuario.getEmail())) {
-            log.warn("Email {} already registered", usuario.getEmail());
-            throw new RuntimeException("Email already registered");
-        }
-        if (existByRut(usuario.getRut())) {
-            log.warn("RUT {} already registered", usuario.getRut());
-            throw new RuntimeException("RUT already registered");
+        if (existsByEmail(requestDTO.getEmail())) {
+            log.warn("Email {} already registered", requestDTO.getEmail());
+            throw new BusinessException("Email already registered");
         }
 
-        Optional<Paciente> pacienteOpt = pacienteService.findByRut(usuario.getRut());
-        if (pacienteOpt.isEmpty()){
-            log.warn("RUT {} not found in 'paciente' table. Registration denied.", usuario.getRut());
-            throw new RuntimeException("Patient not found. Must be added by a professional first.");
+        if (existsByRut(requestDTO.getRut())) {
+            log.warn("RUT {} already registered", requestDTO.getRut());
+            throw new BusinessException("RUT already registered");
         }
 
-        Paciente paciente = pacienteOpt.get();
+        Paciente paciente = pacienteService.getPacienteByRut(requestDTO.getRut());
 
-        usuario.setContrasena(passwordEncoder.encode(usuario.getContrasena()));
+        Rol rol = rolRepository.findByNombre("PACIENTE")
+                        .orElseThrow(() ->{
+                            log.error("Role PACIENTE not found in database");
+                            return new BusinessException("Role not found");
+                        });
+
+        Usuario usuario = usuarioMapper.toEntity(requestDTO, rol);
+        usuario.setContrasena(passwordEncoder.encode(requestDTO.getContrasena()));
+
         Usuario savedUser = usuarioRepository.save(usuario);
         log.info("User saved successfully with ID {}", savedUser.getId());
 
         paciente.setUsuario(savedUser);
         pacienteRepository.save(paciente);
         log.info("Linked user ID {} with patient ID {}", savedUser.getId(), paciente.getId());
-        return savedUser;
+        return usuarioMapper.toResponseDTO(savedUser);
     }
 
     @Override
-    public List<Usuario> findAll() {
+    public List<UsuarioResponseDTO> findAll() {
         log.info("Fetching all users");
-        return usuarioRepository.findAll();
+        List<Usuario> usuarios = usuarioRepository.findAll();
+        return usuarioMapper.toResponseDTOList(usuarios);
     }
 
     @Override
-    public Usuario findById(Integer id) {
+    public UsuarioResponseDTO findById(Integer id) {
         log.info("Searching user with id: {}", id);
-        return usuarioRepository.findById(id)
-                .orElseThrow(() ->{
+        Usuario usuario = usuarioRepository.findById(id)
+                .orElseThrow(() -> {
                     log.error("user with id {} not found", id);
-                    return new RuntimeException("User not found with id: " + id);
+                    return new UserNotFoundException(id);
                 });
+        return usuarioMapper.toResponseDTO(usuario);
     }
 
-    /*
-    @Override
-    public Usuario update(Usuario usuario) {
-        log.info("Updating user with id: {}", usuario.getId());
-        return usuarioRepository.save(usuario);
-    }
-
-    @Override
-    public void delete(Integer id) {
-        log.info("Delenting user with id: {}", id);
-        usuarioRepository.deleteById(id);
-    }
-    */
 }

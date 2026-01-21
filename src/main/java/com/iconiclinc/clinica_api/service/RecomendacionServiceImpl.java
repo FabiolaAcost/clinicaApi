@@ -1,14 +1,13 @@
 package com.iconiclinc.clinica_api.service;
 
 import com.iconiclinc.clinica_api.dto.request.RecomendacionRequestDTO;
-import com.iconiclinc.clinica_api.dto.response.RecomendacionListResponseDTO;
 import com.iconiclinc.clinica_api.dto.response.RecomendacionResponseDTO;
-import com.iconiclinc.clinica_api.dto.response.TratamientoListResponseDTO;
-import com.iconiclinc.clinica_api.dto.response.TratamientoResponseDTO;
 import com.iconiclinc.clinica_api.entity.Paciente;
 import com.iconiclinc.clinica_api.entity.Profesional;
 import com.iconiclinc.clinica_api.entity.Recomendacion;
-import com.iconiclinc.clinica_api.entity.Tratamiento;
+import com.iconiclinc.clinica_api.exception.PatientNotFoundException;
+import com.iconiclinc.clinica_api.exception.ProfessionalNotFoundException;
+import com.iconiclinc.clinica_api.exception.RecommendationNotFoundException;
 import com.iconiclinc.clinica_api.mapper.RecomendacionMapper;
 import com.iconiclinc.clinica_api.repository.PacienteRepository;
 import com.iconiclinc.clinica_api.repository.ProfesionalRepository;
@@ -45,13 +44,13 @@ public class RecomendacionServiceImpl implements RecomendacionService{
         Paciente paciente = pacienteRepository.findById(pacienteId)
                 .orElseThrow(() -> {
                     log.error("Patient not found with ID {}", pacienteId);
-                    return new RuntimeException("Patient not found with ID: " + pacienteId);
+                    return new PatientNotFoundException(pacienteId);
                 });
 
         Profesional profesional = profesionalRepository.findById(profesionalId)
                 .orElseThrow(() -> {
                     log.error("Professional not found with ID {}", profesionalId);
-                    return new RuntimeException("Professional not found with ID: " + profesionalId);
+                    return new ProfessionalNotFoundException(profesionalId);
                 });
 
         Recomendacion recomend = recomendacionMapper.toEntity(recomendacion, paciente, profesional);
@@ -62,31 +61,51 @@ public class RecomendacionServiceImpl implements RecomendacionService{
     }
 
     @Override
-    public RecomendacionListResponseDTO getRecommendationsByPatient(Integer pacienteId) {
+    public List<RecomendacionResponseDTO> getRecommendationsByPatient(Integer pacienteId) {
         log.info("Fetching all recommendations for patient ID: {}", pacienteId);
 
-        Paciente paciente = pacienteRepository.findById(pacienteId)
+        pacienteRepository.findById(pacienteId)
                 .orElseThrow(() -> {
                     log.error("Patient not found with ID {}", pacienteId);
-                    return new RuntimeException("Patient not found with ID: " + pacienteId);
+                    return new PatientNotFoundException(pacienteId);
                 });
 
-        List<Recomendacion> recommendations = recomendacionRepository.findByPaciente_id(pacienteId);
+        List<Recomendacion> recommendations = recomendacionRepository.findByPacienteId(pacienteId);
 
         if (recommendations.isEmpty()){
-            log.warn("No treatments found for patient ID: {}", pacienteId);
+            log.warn("No recommendations found for patient ID: {}", pacienteId);
         } else {
-            log.info("Found {} treatments for patient ID {}", recommendations.size(), pacienteId);
+            log.info("Found {} recommendations for patient ID {}", recommendations.size(), pacienteId);
         }
 
-        List<RecomendacionResponseDTO> responseList = recomendacionMapper.toResponseDTOList(recommendations);
+        return recomendacionMapper.toResponseDTOList(recommendations);
+    }
 
-        String message = recommendations.isEmpty()
-                ? "No hay recomendaciones registradas para este paciente."
-                : "Recomendaciones obtenidas exitosamente";
+    @Override
+    public RecomendacionResponseDTO updateRecommendation(Integer recommendationId, RecomendacionRequestDTO requestDTO) {
+        log.info("Updating recommendation description for recommendation ID {}", recommendationId);
+        Recomendacion recomendacion = recomendacionRepository.findById(recommendationId)
+                .orElseThrow(() ->{
+                    log.error("Recommendation not found with id {}", recommendationId);
+                    return new RecommendationNotFoundException(recommendationId);
+                });
 
-        log.info("Returning recommedations list response for patient ID {} with {} recommendations.",
-                pacienteId, recommendations.size());
-        return new RecomendacionListResponseDTO(responseList, message);
+        recomendacion.setDescripcion(requestDTO.getDescripcion());
+        Recomendacion updated = recomendacionRepository.save(recomendacion);
+        return recomendacionMapper.toResponseDTO(updated);
+    }
+
+    @Override
+    public void deleteRecommendation(Integer recommendationId) {
+        log.info("Deleting recommendation with ID {}", recommendationId);
+        Recomendacion recomendacion = recomendacionRepository.findById(recommendationId)
+                .orElseThrow(() ->{
+                    log.error("Recommendation not found with id {}", recommendationId);
+                    return new RecommendationNotFoundException(recommendationId);
+                });
+
+        recomendacionRepository.delete(recomendacion);
+        log.info("Recommendation ID {} deleted successfully", recommendationId);
+
     }
 }

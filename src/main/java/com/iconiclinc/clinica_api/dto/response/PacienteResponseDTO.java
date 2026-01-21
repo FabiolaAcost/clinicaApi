@@ -2,7 +2,6 @@ package com.iconiclinc.clinica_api.dto.response;
 
 public class PacienteResponseDTO {
     private Integer id;
-
     private String nombre;
     private String rut;
 

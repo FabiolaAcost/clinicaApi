@@ -12,10 +12,10 @@ import java.util.List;
 
 @Component
 public class RutinaMapper {
-    public Rutina toEntity(RutinaRequestDTO rutinaRequestDTO, Paciente paciente, Profesional profesional){
+    public Rutina toEntity(TipoRutina tipo, String descripcion, Paciente paciente, Profesional profesional){
         Rutina rutina = new Rutina();
-        rutina.setTipo(TipoRutina.valueOf(rutinaRequestDTO.getTipo()));
-        rutina.setDescripcion(rutinaRequestDTO.getDescripcion());
+        rutina.setTipo(tipo);
+        rutina.setDescripcion(descripcion);
         rutina.setProfesional(profesional);
         rutina.setPaciente(paciente);
         return rutina;

@@ -13,6 +13,6 @@ public interface PacienteRepository extends JpaRepository<Paciente, Integer> {
     boolean existsByRut(String rut);
 
     boolean existsByUsuario_Email(String email);
-    List<Paciente> findByProfesional_id(Integer id);
+    List<Paciente> findByProfesionalId(Integer id);
 
 }

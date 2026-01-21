@@ -17,27 +17,24 @@ import java.util.Optional;
 @Service
 public class PacienteServiceImpl implements PacienteService {
 
-    private static final Logger log = LoggerFactory.getLogger(ProfesionalServiceImpl.class);
+    private static final Logger log = LoggerFactory.getLogger(PacienteServiceImpl.class);
     private final PacienteRepository pacienteRepository;
-    private final RutinaRepository rutinaRepository;
     private final PacienteMapper pacienteMapper;
 
-    public PacienteServiceImpl(PacienteRepository pacienteRepository, RutinaRepository rutinaRepository, PacienteMapper pacienteMapper) {
+    public PacienteServiceImpl(PacienteRepository pacienteRepository, PacienteMapper pacienteMapper) {
         this.pacienteRepository = pacienteRepository;
-        this.rutinaRepository = rutinaRepository;
         this.pacienteMapper = pacienteMapper;
     }
 
     @Override
-    public Optional<Paciente> findByRut(String rut) {
+    public Paciente getPacienteByRut(String rut) {
         log.info("Searching for patient with rut {}", rut);
-        Optional<Paciente> paciente = pacienteRepository.findByRut(rut);
-        if (paciente.isPresent()){
-            log.info("Patient found with RUT {}", rut);
-        } else {
-            log.warn("No patient found with rut {}", rut);
-        }
-        return paciente;
+
+        return pacienteRepository.findByRut(rut)
+                .orElseThrow(()->{
+                    log.warn("Patient not found with RUT {}", rut);
+                    return new PatientNotFoundException("Patient not found with RUT: " + rut);
+                });
     }
 
     @Override
@@ -51,5 +48,4 @@ public class PacienteServiceImpl implements PacienteService {
                 });
         return pacienteMapper.toResponseDTO(paciente);
     }
-
 }

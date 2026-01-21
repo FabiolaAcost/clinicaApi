@@ -17,7 +17,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/pacientes")
 public class PacienteController {
-    private static final Logger log = LoggerFactory.getLogger(PacienteController.class);
     private final PacienteService pacienteService;
 
     public PacienteController(PacienteService pacienteService) {

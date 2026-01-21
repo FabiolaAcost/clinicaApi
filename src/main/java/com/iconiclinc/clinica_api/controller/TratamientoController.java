@@ -1,10 +1,7 @@
 package com.iconiclinc.clinica_api.controller;
 
 import com.iconiclinc.clinica_api.dto.request.TratamientoRequestDTO;
-import com.iconiclinc.clinica_api.dto.response.TratamientoListResponseDTO;
 import com.iconiclinc.clinica_api.dto.response.TratamientoResponseDTO;
-import com.iconiclinc.clinica_api.entity.Tratamiento;
-import com.iconiclinc.clinica_api.repository.PacienteRepository;
 import com.iconiclinc.clinica_api.service.TratamientoService;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
@@ -17,8 +14,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/tratamientos")
 public class TratamientoController {
-    private static final Logger log = LoggerFactory.getLogger(TratamientoController.class);
-
     private final TratamientoService tratamientoService;
 
     public TratamientoController(TratamientoService tratamientoService) {
@@ -34,8 +29,22 @@ public class TratamientoController {
     }
 
     @GetMapping("/pacientes/{pacienteId}")
-    public ResponseEntity<TratamientoListResponseDTO> getTreatmentsByPatient(
+    public ResponseEntity<List<TratamientoResponseDTO>> getTreatmentsByPatient(
             @PathVariable Integer pacienteId){
         return ResponseEntity.ok(tratamientoService.getTreatmentsByPatient(pacienteId));
+    }
+
+    @PutMapping("/{tratamientoId}")
+    public ResponseEntity<TratamientoResponseDTO> updateTreatment(
+            @PathVariable Integer tratamientoId,
+            @Valid @RequestBody TratamientoRequestDTO requestDTO
+    ){
+        return ResponseEntity.ok(tratamientoService.updateTreatment(tratamientoId, requestDTO));
+    }
+
+    @DeleteMapping("/{tratamientoId}")
+    public ResponseEntity<Void> deleteTreatment(@PathVariable Integer tratamientoId) {
+        tratamientoService.deleteTreatment(tratamientoId);
+        return ResponseEntity.noContent().build();
     }
 }

@@ -8,5 +8,5 @@ import java.util.List;
 
 @Repository
 public interface RutinaRepository extends JpaRepository<Rutina, Integer> {
-    List<Rutina> findByPaciente_id(Integer pacienteId);
+    List<Rutina> findByPacienteId(Integer pacienteId);
 }

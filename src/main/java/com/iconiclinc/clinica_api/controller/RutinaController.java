@@ -1,13 +1,9 @@
 package com.iconiclinc.clinica_api.controller;
 
 import com.iconiclinc.clinica_api.dto.request.RutinaRequestDTO;
-import com.iconiclinc.clinica_api.dto.response.RutinaListResponseDTO;
 import com.iconiclinc.clinica_api.dto.response.RutinaResponseDTO;
-import com.iconiclinc.clinica_api.entity.Rutina;
 import com.iconiclinc.clinica_api.service.RutinaService;
 import jakarta.validation.Valid;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -33,7 +29,24 @@ public class RutinaController {
     }
 
     @GetMapping("/pacientes/{pacienteId}")
-    public ResponseEntity<RutinaListResponseDTO> getRoutinesByPatient(@PathVariable Integer pacienteId){
+    public ResponseEntity<List<RutinaResponseDTO>> getRoutinesByPatient(
+            @PathVariable Integer pacienteId){
         return ResponseEntity.ok(rutinaService.getRoutinesByPatient(pacienteId));
+    }
+
+    @PutMapping("/{rutinaId}")
+    public ResponseEntity<RutinaResponseDTO> updateRoutine(
+            @PathVariable Integer rutinaId,
+            @Valid @RequestBody RutinaRequestDTO requestDTO
+    ){
+        return ResponseEntity.ok(rutinaService.updateRoutine(rutinaId, requestDTO));
+
+    }
+    @DeleteMapping("/{rutinaId}")
+    public ResponseEntity<Void> deleteRoutine(
+            @PathVariable Integer rutinaId
+    ){
+        rutinaService.deleteRoutine(rutinaId);
+        return ResponseEntity.noContent().build();
     }
 }

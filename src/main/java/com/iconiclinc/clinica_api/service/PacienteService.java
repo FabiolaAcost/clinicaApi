@@ -8,6 +8,6 @@ import java.util.List;
 import java.util.Optional;
 
 public interface PacienteService {
-    Optional<Paciente> findByRut(String rut);
-    PacienteResponseDTO getPacienteById(Integer id);
+    Paciente getPacienteByRut(String rut);
+    PacienteResponseDTO getPacienteById(Integer pacienteId);
 }

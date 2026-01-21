@@ -3,6 +3,7 @@ package com.iconiclinc.clinica_api.entity;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
 import java.time.LocalDate;
 
@@ -18,7 +19,7 @@ public class Tratamiento {
     @Column(nullable = false)
     private TipoTratamiento tipo;
 
-    @NotBlank(message = "Date is required")
+    @NotNull(message = "Date is required.")
     private LocalDate fecha;
 
     @ManyToOne
