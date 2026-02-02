@@ -2,6 +2,7 @@ package com.iconiclinc.clinica_api.controller;
 
 import com.iconiclinc.clinica_api.dto.request.LoginRequestDTO;
 import com.iconiclinc.clinica_api.dto.request.UsuarioRequestDTO;
+import com.iconiclinc.clinica_api.dto.response.LoginResponseDTO;
 import com.iconiclinc.clinica_api.dto.response.UsuarioResponseDTO;
 import com.iconiclinc.clinica_api.entity.Usuario;
 import com.iconiclinc.clinica_api.mapper.UsuarioMapper;
@@ -31,7 +32,7 @@ public class UsuarioController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<UsuarioResponseDTO> login(
+    public ResponseEntity<LoginResponseDTO> login(
             @Valid @RequestBody LoginRequestDTO requestDTO){
 
        return ResponseEntity.ok(usuarioService.login(requestDTO));

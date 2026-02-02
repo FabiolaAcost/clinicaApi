@@ -2,6 +2,7 @@ package com.iconiclinc.clinica_api.service;
 
 import com.iconiclinc.clinica_api.dto.request.LoginRequestDTO;
 import com.iconiclinc.clinica_api.dto.request.UsuarioRequestDTO;
+import com.iconiclinc.clinica_api.dto.response.LoginResponseDTO;
 import com.iconiclinc.clinica_api.dto.response.UsuarioResponseDTO;
 import com.iconiclinc.clinica_api.entity.Paciente;
 import com.iconiclinc.clinica_api.entity.Rol;
@@ -12,6 +13,7 @@ import com.iconiclinc.clinica_api.mapper.UsuarioMapper;
 import com.iconiclinc.clinica_api.repository.PacienteRepository;
 import com.iconiclinc.clinica_api.repository.RolRepository;
 import com.iconiclinc.clinica_api.repository.UsuarioRepository;
+import com.iconiclinc.clinica_api.security.JwtService;
 import org.hibernate.usertype.BaseUserTypeSupport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,34 +21,36 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 
 @Service
 public class UsuarioServiceImpl implements UsuarioService{
     private static final Logger log = LoggerFactory.getLogger(UsuarioServiceImpl.class);
-
     private final PacienteRepository pacienteRepository;
     private final UsuarioRepository usuarioRepository;
     private final BCryptPasswordEncoder passwordEncoder;
     private final UsuarioMapper usuarioMapper;
     private  final PacienteService pacienteService;
     private final RolRepository rolRepository;
+    private final JwtService jwtService;
 
     public UsuarioServiceImpl(UsuarioRepository usuarioRepository,
                               BCryptPasswordEncoder passwordEncoder,
                               PacienteRepository pacienteRepository, UsuarioMapper usuarioMapper,
-                              PacienteService pacienteService, RolRepository rolRepository) {
+                              PacienteService pacienteService, RolRepository rolRepository, JwtService jwtService) {
         this.usuarioRepository = usuarioRepository;
         this.passwordEncoder = passwordEncoder;
         this.pacienteRepository = pacienteRepository;
         this.usuarioMapper = usuarioMapper;
         this.pacienteService = pacienteService;
         this.rolRepository = rolRepository;
+        this.jwtService = jwtService;
     }
 
     @Override
-    public UsuarioResponseDTO login(LoginRequestDTO requestDTO) {
+    public LoginResponseDTO login(LoginRequestDTO requestDTO) {
         log.info("Attempting login for email {}", requestDTO.getEmail());
 
         Usuario usuario = usuarioRepository.findByEmail(requestDTO.getEmail())
@@ -61,8 +65,18 @@ public class UsuarioServiceImpl implements UsuarioService{
             throw new BusinessException("Invalid email or password");
         }
 
+        Map<String, Object> claims = Map.of(
+                "userId", usuario.getId(),
+                "role", usuario.getRol().getNombre()
+        );
+
+        String token = jwtService.generateToken(usuario.getEmail(), claims);
+
         log.info("Login successful for user {}", usuario.getEmail());
-        return usuarioMapper.toResponseDTO(usuario);
+
+        UsuarioResponseDTO usuarioResponseDTO = usuarioMapper.toResponseDTO(usuario);
+
+        return new LoginResponseDTO(token, "Bearer", usuarioResponseDTO);
     }
 
     private Boolean existsByEmail(String email) {
