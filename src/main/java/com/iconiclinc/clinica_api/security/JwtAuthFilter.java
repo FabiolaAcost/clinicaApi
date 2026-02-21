@@ -19,7 +19,6 @@ import java.util.List;
 
 @Component
 public class JwtAuthFilter extends OncePerRequestFilter {
-
     private final JwtService jwtService;
     private final UsuarioRepository usuarioRepository;
 
@@ -44,7 +43,9 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         try {
             String email = jwtService.extractSubject(token);
-            if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+            Integer userId = jwtService.extractUserId(token);
+
+            if (email != null && userId != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                 Usuario usuario = usuarioRepository.findByEmail(email).orElse(null);
 
                 if (usuario != null) {
@@ -52,7 +53,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                     var authorities = List.of(new SimpleGrantedAuthority("ROLE_" + roleName));
 
                     var authentication = new UsernamePasswordAuthenticationToken(
-                            email, null, authorities
+                            userId, null, authorities
                     );
                     authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authentication);

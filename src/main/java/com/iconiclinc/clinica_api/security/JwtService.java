@@ -46,4 +46,15 @@ public class JwtService {
     public String extractSubject(String token) {
         return extractAllClaims(token).getSubject();
     }
+
+    public Integer extractUserId(String token){
+        Object value = extractAllClaims(token).get("userId");
+        if (value == null) return null;
+
+        if (value instanceof Integer i) return i;
+        if (value instanceof Long l) return l.intValue();
+        if (value instanceof String s) return Integer.valueOf(s);
+
+        throw new IllegalArgumentException("Invalid userId claim type: " + value.getClass().getName());
+    }
 }
