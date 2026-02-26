@@ -7,7 +7,7 @@ import com.iconiclinc.clinica_api.entity.Paciente;
 import java.util.List;
 
 public interface ProfesionalService {
-    PacienteResponseDTO addPatient(Integer professionalId, PacienteRequestDTO requestDTO);
+    PacienteResponseDTO addPatientByEmail(String email, PacienteRequestDTO requestDTO);
 
-    List<PacienteResponseDTO> getPatientsByProfessional(Integer professionalId);
+    List<PacienteResponseDTO> getPatientsByEmail(String email);
 }

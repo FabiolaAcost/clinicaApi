@@ -8,6 +8,9 @@ import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -21,12 +24,13 @@ public class RecomendacionController {
     public RecomendacionController(RecomendacionService recomendacionService) {
         this.recomendacionService = recomendacionService;
     }
-    @PostMapping("/{profesionalId}/pacientes/{pacienteId}")
+    @PostMapping("/pacientes/{pacienteId}")
     public ResponseEntity<RecomendacionResponseDTO> addRecommendation(
-            @PathVariable Integer profesionalId,
             @PathVariable Integer pacienteId,
+            Authentication authentication,
             @Valid @RequestBody RecomendacionRequestDTO recomendacion){
-        return ResponseEntity.ok(recomendacionService.addRecommendation(pacienteId, profesionalId, recomendacion));
+        String email = authentication.getName();
+        return ResponseEntity.ok(recomendacionService.addRecommendation(pacienteId, email, recomendacion));
     }
 
     @GetMapping("/pacientes/{pacienteId}")

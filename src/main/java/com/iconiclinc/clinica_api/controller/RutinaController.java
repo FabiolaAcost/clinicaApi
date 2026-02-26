@@ -5,6 +5,7 @@ import com.iconiclinc.clinica_api.dto.response.RutinaResponseDTO;
 import com.iconiclinc.clinica_api.service.RutinaService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -20,12 +21,13 @@ public class RutinaController {
         this.rutinaService = rutinaService;
     }
 
-    @PostMapping("/{profesionalId}/pacientes/{pacienteId}")
+    @PostMapping("/pacientes/{pacienteId}")
     public ResponseEntity<RutinaResponseDTO> addRoutine(
-            @PathVariable Integer profesionalId,
             @PathVariable Integer pacienteId,
+            Authentication authentication,
             @Valid @RequestBody RutinaRequestDTO rutina) {
-        return ResponseEntity.ok(rutinaService.addRoutine(pacienteId, profesionalId, rutina));
+        String email = authentication.getName();
+        return ResponseEntity.ok(rutinaService.addRoutine(pacienteId, email, rutina));
     }
 
     @GetMapping("/pacientes/{pacienteId}")

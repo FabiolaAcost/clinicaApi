@@ -38,8 +38,8 @@ public class TratamientoServiceImpl implements TratamientoService{
     }
 
     @Override
-    public TratamientoResponseDTO addTreatment(Integer pacienteId, Integer profesionalId, TratamientoRequestDTO requestDTO) {
-        log.info("Adding treatment for patient {} by professional {}", pacienteId, profesionalId);
+    public TratamientoResponseDTO addTreatment(Integer pacienteId, String email, TratamientoRequestDTO requestDTO) {
+        log.info("Adding treatment for patient id {} by professional email {}", pacienteId, email);
 
         Paciente paciente = pacienteRepository.findById(pacienteId)
                 .orElseThrow(() -> {
@@ -47,11 +47,17 @@ public class TratamientoServiceImpl implements TratamientoService{
                     return new PatientNotFoundException(pacienteId);
                 });
 
-        Profesional profesional = profesionalRepository.findById(profesionalId)
+        Profesional profesional = profesionalRepository.findByUsuarioEmail(email)
                 .orElseThrow(() -> {
-                    log.error("Professional not found with ID {}", profesionalId);
-                    return new ProfessionalNotFoundException(profesionalId);
+                    log.error("Professional not found with email {}", email);
+                    return new ProfessionalNotFoundException(email);
                 });
+
+        if (!paciente.getProfesional().getId().equals(profesional.getId())) {
+            log.error("Professional {} tried to modify patient {} not assigned to them",
+                    email, pacienteId);
+            throw new BusinessException("You are not allowed to modify this patient");
+        }
 
         TipoTratamiento tipo;
         try {
@@ -65,9 +71,7 @@ public class TratamientoServiceImpl implements TratamientoService{
                 requestDTO.getFecha(),paciente, profesional);
 
         Tratamiento saved = tratamientoRepository.save(tratamiento);
-
-        log.info("Treatment saved successfully with ID {} for patient {} by professional {}",
-                saved.getId(), pacienteId, profesionalId);
+        log.info("Treatment saved successfully with ID {}", saved.getId());
 
         return tratamientoMapper.toResponseDTO(saved);
     }

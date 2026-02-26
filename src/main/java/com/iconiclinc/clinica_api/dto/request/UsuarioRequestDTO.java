@@ -27,4 +27,8 @@ public class UsuarioRequestDTO {
     public String getContrasena() {
         return contrasena;
     }
+
+    public String getRol() {
+        return rol;
+    }
 }

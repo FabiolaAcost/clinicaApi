@@ -6,7 +6,7 @@ import com.iconiclinc.clinica_api.dto.response.TratamientoResponseDTO;
 import java.util.List;
 
 public interface TratamientoService {
-    TratamientoResponseDTO addTreatment(Integer pacienteId, Integer profesionalId, TratamientoRequestDTO requestDTO);
+    TratamientoResponseDTO addTreatment(Integer pacienteId, String email, TratamientoRequestDTO requestDTO);
 
     List<TratamientoResponseDTO> getTreatmentsByPatient(Integer pacienteId);
 

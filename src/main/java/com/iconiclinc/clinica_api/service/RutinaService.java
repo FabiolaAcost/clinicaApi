@@ -6,7 +6,7 @@ import com.iconiclinc.clinica_api.dto.response.RutinaResponseDTO;
 import java.util.List;
 
 public interface RutinaService{
-    RutinaResponseDTO addRoutine(Integer pacienteId, Integer profesionalId, RutinaRequestDTO requestDTO);
+    RutinaResponseDTO addRoutine(Integer pacienteId, String email, RutinaRequestDTO requestDTO);
     List<RutinaResponseDTO> getRoutinesByPatient(Integer pacienteId);
     RutinaResponseDTO updateRoutine(Integer rutinaId, RutinaRequestDTO requestDTO);
     void deleteRoutine(Integer rutinaId);

@@ -37,14 +37,20 @@ public class RutinaServiceImpl implements RutinaService{
     }
 
     @Override
-    public RutinaResponseDTO addRoutine(Integer pacienteId, Integer profesionalId, RutinaRequestDTO requestDTO) {
-        log.info("Attempting to add new routine for patient ID: {} by professional ID: {}",
-                pacienteId, profesionalId);
+    public RutinaResponseDTO addRoutine(Integer pacienteId, String email, RutinaRequestDTO requestDTO) {
+        log.info("Attempting to add new routine for patient ID: {} by professional email: {}",
+                pacienteId, email);
         Paciente patient = pacienteRepository.findById(pacienteId)
                 .orElseThrow(() -> new PatientNotFoundException(pacienteId));
 
-        Profesional professional = profesionalRepository.findById(profesionalId)
-                .orElseThrow(() -> new ProfessionalNotFoundException(profesionalId));
+        Profesional professional = profesionalRepository.findByUsuarioEmail(email)
+                .orElseThrow(() -> new ProfessionalNotFoundException(email));
+
+        if (!patient.getProfesional().getId().equals(professional.getId())) {
+            log.error("Professional {} tried to modify patient {} not assigned to them",
+                    email, pacienteId);
+            throw new BusinessException("You are not allowed to modify this patient");
+        }
 
         TipoRutina tipo;
         try {
@@ -56,7 +62,7 @@ public class RutinaServiceImpl implements RutinaService{
 
         Rutina rutina = rutinaMapper.toEntity(tipo, requestDTO.getDescripcion(), patient, professional);
         Rutina saved = rutinaRepository.save(rutina);
-        log.info("Routine saved successfully for patient ID: {} by professional ID: {}  with type: {}", pacienteId, profesionalId, requestDTO.getTipo());
+        log.info("Routine saved successfully with ID: {}", saved.getId());
         return rutinaMapper.toResponseDTO(saved);
     }
 

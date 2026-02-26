@@ -5,12 +5,14 @@ import com.iconiclinc.clinica_api.dto.request.UsuarioRequestDTO;
 import com.iconiclinc.clinica_api.dto.response.LoginResponseDTO;
 import com.iconiclinc.clinica_api.dto.response.UsuarioResponseDTO;
 import com.iconiclinc.clinica_api.entity.Paciente;
+import com.iconiclinc.clinica_api.entity.Profesional;
 import com.iconiclinc.clinica_api.entity.Rol;
 import com.iconiclinc.clinica_api.entity.Usuario;
 import com.iconiclinc.clinica_api.exception.BusinessException;
 import com.iconiclinc.clinica_api.exception.UserNotFoundException;
 import com.iconiclinc.clinica_api.mapper.UsuarioMapper;
 import com.iconiclinc.clinica_api.repository.PacienteRepository;
+import com.iconiclinc.clinica_api.repository.ProfesionalRepository;
 import com.iconiclinc.clinica_api.repository.RolRepository;
 import com.iconiclinc.clinica_api.repository.UsuarioRepository;
 import com.iconiclinc.clinica_api.security.JwtService;
@@ -19,6 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
@@ -35,11 +38,12 @@ public class UsuarioServiceImpl implements UsuarioService{
     private  final PacienteService pacienteService;
     private final RolRepository rolRepository;
     private final JwtService jwtService;
+    private final ProfesionalRepository profesionalRepository;
 
     public UsuarioServiceImpl(UsuarioRepository usuarioRepository,
                               BCryptPasswordEncoder passwordEncoder,
                               PacienteRepository pacienteRepository, UsuarioMapper usuarioMapper,
-                              PacienteService pacienteService, RolRepository rolRepository, JwtService jwtService) {
+                              PacienteService pacienteService, RolRepository rolRepository, JwtService jwtService, ProfesionalRepository profesionalRepository) {
         this.usuarioRepository = usuarioRepository;
         this.passwordEncoder = passwordEncoder;
         this.pacienteRepository = pacienteRepository;
@@ -47,6 +51,7 @@ public class UsuarioServiceImpl implements UsuarioService{
         this.pacienteService = pacienteService;
         this.rolRepository = rolRepository;
         this.jwtService = jwtService;
+        this.profesionalRepository = profesionalRepository;
     }
 
     @Override
@@ -92,6 +97,7 @@ public class UsuarioServiceImpl implements UsuarioService{
     }
 
     @Override
+    @Transactional
     public UsuarioResponseDTO register(UsuarioRequestDTO requestDTO) {
         log.info("Attempting to register user with RUT: {}", requestDTO.getRut());
 
@@ -105,9 +111,11 @@ public class UsuarioServiceImpl implements UsuarioService{
             throw new BusinessException("RUT already registered");
         }
 
-        Paciente paciente = pacienteService.getPacienteByRut(requestDTO.getRut());
+        String nombreRol = (requestDTO.getRol() == null || requestDTO.getRol().isBlank())
+                ? "PACIENTE"
+                : requestDTO.getRol().toUpperCase();
 
-        Rol rol = rolRepository.findByNombre("PACIENTE")
+        Rol rol = rolRepository.findByNombre(nombreRol)
                         .orElseThrow(() ->{
                             log.error("Role PACIENTE not found in database");
                             return new BusinessException("Role not found");
@@ -119,9 +127,17 @@ public class UsuarioServiceImpl implements UsuarioService{
         Usuario savedUser = usuarioRepository.save(usuario);
         log.info("User saved successfully with ID {}", savedUser.getId());
 
-        paciente.setUsuario(savedUser);
-        pacienteRepository.save(paciente);
-        log.info("Linked user ID {} with patient ID {}", savedUser.getId(), paciente.getId());
+        if ("PACIENTE".equals(nombreRol)){
+            Paciente paciente = pacienteService.getPacienteByRut(requestDTO.getRut());
+            paciente.setUsuario(savedUser);
+            pacienteRepository.save(paciente);
+        } else if ("PROFESIONAL".equals(nombreRol)){
+            Profesional profesional = new Profesional();
+            profesional.setUsuario(savedUser);
+            profesionalRepository.save(profesional);
+        }
+
+        log.info("Linked user ID {}", savedUser.getId());
         return usuarioMapper.toResponseDTO(savedUser);
     }
 

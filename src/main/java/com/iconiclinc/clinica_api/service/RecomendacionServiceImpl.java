@@ -8,6 +8,7 @@ import com.iconiclinc.clinica_api.entity.Recomendacion;
 import com.iconiclinc.clinica_api.exception.PatientNotFoundException;
 import com.iconiclinc.clinica_api.exception.ProfessionalNotFoundException;
 import com.iconiclinc.clinica_api.exception.RecommendationNotFoundException;
+import com.iconiclinc.clinica_api.exception.BusinessException;
 import com.iconiclinc.clinica_api.mapper.RecomendacionMapper;
 import com.iconiclinc.clinica_api.repository.PacienteRepository;
 import com.iconiclinc.clinica_api.repository.ProfesionalRepository;
@@ -15,7 +16,6 @@ import com.iconiclinc.clinica_api.repository.RecomendacionRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-
 import java.util.List;
 
 @Service
@@ -38,8 +38,8 @@ public class RecomendacionServiceImpl implements RecomendacionService{
     }
 
     @Override
-    public RecomendacionResponseDTO addRecommendation(Integer pacienteId, Integer profesionalId, RecomendacionRequestDTO recomendacion) {
-        log.info("Attempting to add new recommendation for patient ID {} by professional ID {}", pacienteId, profesionalId);
+    public RecomendacionResponseDTO addRecommendation(Integer pacienteId, String email, RecomendacionRequestDTO recomendacion) {
+        log.info("Attempting to add new recommendation for patient ID {} by professional email {}", pacienteId, email);
 
         Paciente paciente = pacienteRepository.findById(pacienteId)
                 .orElseThrow(() -> {
@@ -47,16 +47,22 @@ public class RecomendacionServiceImpl implements RecomendacionService{
                     return new PatientNotFoundException(pacienteId);
                 });
 
-        Profesional profesional = profesionalRepository.findById(profesionalId)
+        Profesional profesional = profesionalRepository.findByUsuarioEmail(email)
                 .orElseThrow(() -> {
-                    log.error("Professional not found with ID {}", profesionalId);
-                    return new ProfessionalNotFoundException(profesionalId);
+                    log.error("Professional not found with email {}", email);
+                    return new ProfessionalNotFoundException(email);
                 });
+
+        if (!paciente.getProfesional().getId().equals(profesional.getId())) {
+            log.error("Professional {} tried to modify patient {} not assigned to them",
+                    email, pacienteId);
+            throw new BusinessException("You are not allowed to modify this patient");
+        }
 
         Recomendacion recomend = recomendacionMapper.toEntity(recomendacion, paciente, profesional);
         Recomendacion saved = recomendacionRepository.save(recomend);
-        log.info("Recommendation saved successfully with ID {} for patient {} by professional {}",
-                saved.getId(), pacienteId, profesionalId);
+        log.info("Recommendation saved successfully with ID {}",
+                saved.getId());
         return recomendacionMapper.toResponseDTO(saved);
     }
 

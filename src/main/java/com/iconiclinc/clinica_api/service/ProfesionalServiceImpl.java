@@ -30,11 +30,15 @@ public class ProfesionalServiceImpl implements ProfesionalService{
     }
 
     @Override
-    public PacienteResponseDTO addPatient(Integer professionalId, PacienteRequestDTO requestDTO) {
-        log.info("Attempting to add new patient with RUT {}", requestDTO.getRut());
+    public PacienteResponseDTO addPatientByEmail(String email, PacienteRequestDTO requestDTO) {
+        log.info("Attempting to add new patient with RUT {} for professional {}",
+                requestDTO.getRut(), email);
 
-        Profesional profesional = profesionalRepository.findById(professionalId)
-                .orElseThrow(() -> new ProfessionalNotFoundException(professionalId));
+        Profesional profesional = profesionalRepository.findByUsuarioEmail(email)
+                .orElseThrow(() -> {
+                    log.error("Professional not found with email {}", email);
+                    return new ProfessionalNotFoundException(email);
+                });
 
         if (pacienteRepository.existsByRut(requestDTO.getRut())){
             log.warn("Patient with RUT {} already exists", requestDTO.getRut());
@@ -50,23 +54,23 @@ public class ProfesionalServiceImpl implements ProfesionalService{
     }
 
     @Override
-    public List<PacienteResponseDTO> getPatientsByProfessional(Integer professionalId) {
-        log.info("Fetching all patients for professional ID: {}", professionalId);
+    public List<PacienteResponseDTO> getPatientsByEmail(String email) {
+        log.info("Fetching all patients for professional email: {}", email);
 
-        profesionalRepository.findById(professionalId)
+        Profesional profesional = profesionalRepository.findByUsuarioEmail(email)
                 .orElseThrow( () ->{
-                    log.error("Professional not found with ID {}", professionalId);
-                    return new ProfessionalNotFoundException(professionalId);
+                    log.error("Professional not found with email {}", email);
+                    return new ProfessionalNotFoundException(email);
                 });
 
 
         List<Paciente> pacientes =
-                pacienteRepository.findByProfesionalId(professionalId);
+                pacienteRepository.findByProfesional(profesional);
 
         if (pacientes.isEmpty()) {
-            log.info("No patients found for professional ID {}", professionalId);
+            log.info("No patients found for professional email {}", email);
         } else {
-            log.info("Found {} patients for professional ID {}", pacientes.size(), professionalId);
+            log.info("Found {} patients for professional email {}", pacientes.size(), email);
         }
 
         return pacientes.stream()
