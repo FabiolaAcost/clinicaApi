@@ -59,10 +59,8 @@ public class ProfesionalServiceImpl implements ProfesionalService{
 
         Profesional profesional = profesionalRepository.findByUsuarioEmail(email)
                 .orElseThrow( () ->{
-                    log.error("Professional not found with email {}", email);
                     return new ProfessionalNotFoundException(email);
                 });
-
 
         List<Paciente> pacientes =
                 pacienteRepository.findByProfesional(profesional);

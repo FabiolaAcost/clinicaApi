@@ -22,7 +22,7 @@ public class Paciente {
     private String rut;
 
     @OneToOne
-    @JoinColumn(name = "id_usuario", nullable = true, unique = true)
+    @JoinColumn(name = "id_usuario", nullable = false, unique = true)
     @JsonIgnoreProperties({"rol"})
     private Usuario usuario;
 

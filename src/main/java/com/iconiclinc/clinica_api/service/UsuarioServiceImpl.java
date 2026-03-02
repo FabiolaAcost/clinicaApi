@@ -4,10 +4,7 @@ import com.iconiclinc.clinica_api.dto.request.LoginRequestDTO;
 import com.iconiclinc.clinica_api.dto.request.UsuarioRequestDTO;
 import com.iconiclinc.clinica_api.dto.response.LoginResponseDTO;
 import com.iconiclinc.clinica_api.dto.response.UsuarioResponseDTO;
-import com.iconiclinc.clinica_api.entity.Paciente;
-import com.iconiclinc.clinica_api.entity.Profesional;
-import com.iconiclinc.clinica_api.entity.Rol;
-import com.iconiclinc.clinica_api.entity.Usuario;
+import com.iconiclinc.clinica_api.entity.*;
 import com.iconiclinc.clinica_api.exception.BusinessException;
 import com.iconiclinc.clinica_api.exception.UserNotFoundException;
 import com.iconiclinc.clinica_api.mapper.UsuarioMapper;
@@ -111,13 +108,18 @@ public class UsuarioServiceImpl implements UsuarioService{
             throw new BusinessException("RUT already registered");
         }
 
-        String nombreRol = (requestDTO.getRol() == null || requestDTO.getRol().isBlank())
-                ? "PACIENTE"
-                : requestDTO.getRol().toUpperCase();
+        if (requestDTO.getRol() == TipoRol.PROFESIONAL){
+            if (requestDTO.getNombre() == null || requestDTO.getNombre().isBlank()){
+                throw new BusinessException("Name is requires for professionals");
+            }
+            if (requestDTO.getProfesion() == null || requestDTO.getProfesion().isBlank()){
+                throw new BusinessException("Profession is required for professional");
+            }
+        }
 
-        Rol rol = rolRepository.findByNombre(nombreRol)
+        Rol rol = rolRepository.findByNombre(requestDTO.getRol().name())
                         .orElseThrow(() ->{
-                            log.error("Role PACIENTE not found in database");
+                            log.error("Role not found");
                             return new BusinessException("Role not found");
                         });
 
@@ -125,19 +127,31 @@ public class UsuarioServiceImpl implements UsuarioService{
         usuario.setContrasena(passwordEncoder.encode(requestDTO.getContrasena()));
 
         Usuario savedUser = usuarioRepository.save(usuario);
-        log.info("User saved successfully with ID {}", savedUser.getId());
 
-        if ("PACIENTE".equals(nombreRol)){
-            Paciente paciente = pacienteService.getPacienteByRut(requestDTO.getRut());
+        if (requestDTO.getRol() == TipoRol.PACIENTE){
+
+            Paciente paciente = pacienteRepository.findByRut(requestDTO.getRut())
+                            .orElseThrow(() ->
+                                    new BusinessException("Patient Not found. Contact your professional")
+                            );
+            if (paciente.getUsuario() != null){
+                throw new BusinessException("Patient already has an account");
+            }
+
             paciente.setUsuario(savedUser);
             pacienteRepository.save(paciente);
-        } else if ("PROFESIONAL".equals(nombreRol)){
+
+        } else if (requestDTO.getRol() == TipoRol.PROFESIONAL){
+
             Profesional profesional = new Profesional();
+            profesional.setNombre(requestDTO.getNombre());
+            profesional.setProfesion(requestDTO.getProfesion());
             profesional.setUsuario(savedUser);
+
             profesionalRepository.save(profesional);
         }
 
-        log.info("Linked user ID {}", savedUser.getId());
+        log.info("User registered successfully with id {}", savedUser.getId());
         return usuarioMapper.toResponseDTO(savedUser);
     }
 
