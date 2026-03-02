@@ -1,0 +1,53 @@
+package com.iconiclinc.clinica_api.controller;
+
+
+import com.iconiclinc.clinica_api.dto.request.RecomendacionRequestDTO;
+import com.iconiclinc.clinica_api.dto.response.RecomendacionResponseDTO;
+import com.iconiclinc.clinica_api.service.RecomendacionService;
+import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/recomendaciones")
+public class RecomendacionController {
+    private static final Logger log = LoggerFactory.getLogger(RecomendacionController.class);
+    private final RecomendacionService recomendacionService;
+
+    public RecomendacionController(RecomendacionService recomendacionService) {
+        this.recomendacionService = recomendacionService;
+    }
+    @PostMapping("/pacientes/{pacienteId}")
+    public ResponseEntity<RecomendacionResponseDTO> addRecommendation(
+            @PathVariable Integer pacienteId,
+            Authentication authentication,
+            @Valid @RequestBody RecomendacionRequestDTO recomendacion){
+        String email = authentication.getName();
+        return ResponseEntity.ok(recomendacionService.addRecommendation(pacienteId, email, recomendacion));
+    }
+
+    @GetMapping("/pacientes/{pacienteId}")
+    public ResponseEntity<List<RecomendacionResponseDTO>> getRecommendationsByPatient(
+            @PathVariable Integer pacienteId){
+        return ResponseEntity.ok(recomendacionService.getRecommendationsByPatient(pacienteId)) ;
+    }
+    @PutMapping("/{recommendationId}")
+    public ResponseEntity<RecomendacionResponseDTO> updateRecommendation(
+            @PathVariable Integer recommendationId,
+            @Valid @RequestBody RecomendacionRequestDTO requestDTO
+    ){
+        return ResponseEntity.ok(recomendacionService.updateRecommendation(recommendationId, requestDTO));
+    }
+    @DeleteMapping("/{recommendationId}")
+    public ResponseEntity<Void> deleteRecommedantion(@PathVariable Integer recommendationId){
+        recomendacionService.deleteRecommendation(recommendationId);
+        return ResponseEntity.noContent().build();
+    }
+}
